@@ -3,319 +3,420 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>奇美醫院臨床病理部 互動課程表</title>
+    <title>奇美醫院臨床病理部 114年07-08月課程表 - 卡片式</title>
+    <!-- 引入 Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <!-- Chosen Palette: Calm Professional -->
-    <!-- Application Structure Plan: 本應用採用儀表板式佈局。頂部是全局資訊和關鍵備註。其下是互動控制區，提供月份、評鑑分類和地點的篩選功能，讓使用者能快速聚焦所需課程。接著是數據可視化區，透過圓餅圖展示各類課程的佔比，提供直觀的數據洞察。主要內容區是動態生成的課程卡片列表，取代了傳統表格，優化了在各種設備上的閱讀體驗。底部則是完整的備註說明。此結構旨在引導使用者從宏觀概覽到細節探索，透過互動篩選實現個人化資訊查詢，提升實用性與易用性。 -->
-    <!-- Visualization & Content Choices: 1. 課程列表：將原報告中的表格轉化為互動式卡片列表 (HTML/CSS/JS)，目標是組織與比較。使用者可透過篩選器（下拉選單和按鈕）進行互動，操作更直觀，響應式佈局更佳。2. 課程分類統計：將「評鑑分類」數據轉化為圓餅圖 (Chart.js/Canvas)，目標是快速告知使用者課程分佈。滑鼠懸停可顯示詳細分類和數量，提供比靜態數字更豐富的互動。3. 重要須知：將「備註」內容整合並置於頂部顯眼位置 (HTML/CSS)，目標是確保使用者能第一時間獲取關鍵資訊。此設計完全遵循無SVG、無Mermaid JS的規範，專注於提升資訊傳遞效率和使用者體驗。 -->
-    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
         body {
-            background-color: #F8F7F4;
-            font-family: 'Inter', 'Noto Sans TC', sans-serif;
+            font-family: 'Inter', sans-serif;
+            background-color: #f0f2f5; /* 淺灰色背景 */
+            line-height: 1.6;
         }
-        .filter-btn {
-            transition: all 0.3s ease;
+        .container-wrapper {
+            max-width: 1400px; /* 增加最大寬度 */
+            margin: 2rem auto; /* 居中並增加上下間距 */
+            padding: 1.5rem; /* 內部填充 */
+            background-color: #ffffff; /* 白色背景 */
+            border-radius: 1rem; /* 圓角 */
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05); /* 柔和陰影 */
         }
-        .filter-btn.active {
-            background-color: #3B82F6;
-            color: white;
-            font-weight: 600;
+        .main-title {
+            text-align: center;
+            font-size: 2.5rem; /* 更大標題 */
+            font-weight: 700;
+            color: #2c5282; /* 深藍色標題 */
+            margin-bottom: 2rem;
+            line-height: 1.3;
+        }
+        .course-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); /* 自動填充網格，每列最小300px */
+            gap: 1.5rem; /* 網格間距 */
         }
         .course-card {
+            background-color: #f7fafc; /* 卡片淺背景 */
+            border-radius: 0.75rem;
+            padding: 1.5rem;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06); /* 卡片陰影 */
             transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
-            border: 1px solid #e5e7eb;
+            border: 1px solid #e2e8f0; /* 輕微邊框 */
         }
         .course-card:hover {
-            transform: translateY(-4px);
-            box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+            transform: translateY(-5px); /* 懸停上移效果 */
+            box-shadow: 0 8px 12px -1px rgba(0, 0, 0, 0.15), 0 4px 6px -2px rgba(0, 0, 0, 0.08);
         }
-        .tag {
+        .course-date {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #4c51bf; /* 紫藍色日期 */
+            margin-bottom: 0.75rem;
+            display: flex;
+            align-items: center;
+        }
+        .course-date svg {
+            margin-right: 0.5rem;
+            color: #667eea;
+        }
+        .course-name {
+            font-size: 1.15rem;
+            font-weight: 600;
+            color: #2d3748; /* 深色課程名稱 */
+            margin-bottom: 1rem;
+        }
+        .course-detail {
+            display: flex;
+            align-items: flex-start; /* 保持內容頂部對齊 */
+            margin-bottom: 0.5rem;
+            color: #4a5568; /* 細節文字顏色 */
+        }
+        .course-detail svg {
+            flex-shrink: 0; /* 防止圖標縮小 */
+            margin-right: 0.5rem;
+            color: #63b3ed; /* 藍色圖標 */
+            width: 1.25rem; /* 圖標大小 */
+            height: 1.25rem;
+        }
+        .course-detail span {
+            font-size: 0.95rem;
+        }
+        .note-section-cards {
+            background-color: #ebf8ff; /* 備註區塊淺藍背景 */
+            padding: 1.5rem;
+            border-radius: 0.75rem;
+            margin-top: 3rem;
+            color: #2d3748;
+            border: 1px solid #bee3f8;
+        }
+        .note-section-cards h3 {
+            font-weight: 700;
+            margin-bottom: 1rem;
+            color: #2c5282;
+            font-size: 1.25rem;
+        }
+        .note-section-cards ul {
+            list-style: none; /* 移除預設列表點 */
+            padding: 0;
+        }
+        .note-section-cards li {
+            margin-bottom: 0.75rem;
+            line-height: 1.5;
+            display: flex;
+            align-items: flex-start;
+            font-size: 0.95rem;
+        }
+        .note-section-cards li::before {
+            content: "•"; /* 自定義列表點 */
+            color: #4299e1; /* 藍色點 */
+            font-weight: bold;
             display: inline-block;
-            padding: 0.25rem 0.6rem;
-            border-radius: 9999px;
-            font-size: 0.75rem;
-            font-weight: 500;
+            width: 1em;
+            margin-left: -1em;
+            margin-top: -0.1em; /* 微調位置 */
         }
-        .tag-quality { background-color: #DBEAFE; color: #1E40AF; }
-        .tag-humanities { background-color: #E0F2F1; color: #004D40; }
-        .tag-digital { background-color: #FEF3C7; color: #92400E; }
-        .tag-default { background-color: #E5E7EB; color: #4B5563; }
+        .department-signature {
+            text-align: right;
+            margin-top: 2rem;
+            font-weight: 600;
+            color: #4a5568;
+            font-size: 0.9rem;
+        }
+
+        /* 針對小螢幕調整 */
+        @media (max-width: 768px) {
+            .container-wrapper {
+                margin: 1rem;
+                padding: 1rem;
+            }
+            .main-title {
+                font-size: 2rem;
+                margin-bottom: 1.5rem;
+            }
+            .course-card {
+                padding: 1rem;
+            }
+            .course-grid {
+                grid-template-columns: 1fr; /* 單列顯示 */
+                gap: 1rem;
+            }
+            .note-section-cards {
+                padding: 1rem;
+                margin-top: 2rem;
+            }
+        }
     </style>
 </head>
-<body class="text-gray-800">
+<body>
+    <div class="container-wrapper">
+        <h1 class="main-title">奇美醫院臨床病理部<br>114年07-08月課程表</h1>
 
-    <div class="container mx-auto p-4 sm:p-6 md:p-8 max-w-6xl">
-        
-        <header class="text-center mb-8">
-            <h1 class="text-3xl sm:text-4xl font-bold text-blue-900 mb-2">奇美醫院臨床病理部</h1>
-            <h2 class="text-xl sm:text-2xl font-semibold text-gray-700">114年 07-08月 師資培育課程表</h2>
-            <div class="mt-4 text-sm text-gray-600 bg-blue-50 border border-blue-200 rounded-lg p-3 max-w-3xl mx-auto">
-                <p><span class="font-bold">上課時間：</span> 13:00 ~ 14:00</p>
-                <p><span class="font-bold">重要須知：</span>所有課程皆須掃描QR code簽到退，課程僅對本院同仁開放。</p>
-            </div>
-        </header>
-        
-        <main>
-            <div class="bg-white rounded-xl shadow-md p-4 sm:p-6 mb-8">
-                <h3 class="text-lg font-bold mb-4 text-gray-700 border-b pb-2">篩選與分析</h3>
-                <p class="text-sm text-gray-600 mb-4">您可以透過下方的篩選器快速尋找特定課程，或在圖表中查看各類課程的整體分佈情況。點擊篩選條件後，下方的課程列表將會即時更新。</p>
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-                    <div>
-                        <label for="month-filter" class="block text-sm font-medium text-gray-700 mb-1">月份</label>
-                        <div id="month-filter" class="flex flex-wrap gap-2">
-                             <button data-month="all" class="filter-btn active w-full sm:w-auto flex-grow text-center px-4 py-2 bg-gray-200 text-gray-700 rounded-md">全部月份</button>
-                             <button data-month="7" class="filter-btn w-full sm:w-auto flex-grow text-center px-4 py-2 bg-gray-200 text-gray-700 rounded-md">七月</button>
-                             <button data-month="8" class="filter-btn w-full sm:w-auto flex-grow text-center px-4 py-2 bg-gray-200 text-gray-700 rounded-md">八月</button>
-                        </div>
-                    </div>
-                    <div>
-                        <label for="category-filter" class="block text-sm font-medium text-gray-700 mb-1">評鑑分類</label>
-                        <select id="category-filter" class="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
-                            <option value="all">所有分類</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label for="location-filter" class="block text-sm font-medium text-gray-700 mb-1">會議室</label>
-                        <select id="location-filter" class="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
-                            <option value="all">所有地點</option>
-                        </select>
-                    </div>
+        <div class="course-grid">
+            <!-- Course Card 1 -->
+            <div class="course-card">
+                <div class="course-date">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-calendar-days"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/><path d="M8 14h.01"/><path d="M12 14h.01"/><path d="M16 14h.01"/><path d="M8 18h.01"/><path d="M12 18h.01"/><path d="M16 18h.01"/></svg>
+                    07/01
                 </div>
-
-                <div class="w-full p-4 rounded-lg">
-                     <h4 class="text-md font-semibold text-center text-gray-700 mb-2">課程分類統計</h4>
-                     <div class="chart-container mx-auto w-full max-w-xs h-64 sm:h-72">
-                        <canvas id="categoryChart"></canvas>
-                    </div>
+                <h2 class="course-name">師資培育-六大核心能力暨全人照護教育課程 【cobas 5800 介紹】</h2>
+                <div class="course-detail">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-user"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                    <span>主講人: 周月梅</span>
+                </div>
+                <div class="course-detail">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-map-pin"><path d="M12 10.9c2.8 0 5 2.2 5 5s-2.2 5-5 5-5-2.2-5-5 2.2-5 5-5z"/><path d="M12 10.9L12 2"/></svg>
+                    <span>會議室: 561</span>
+                </div>
+                <div class="course-detail">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-award"><circle cx="12" cy="8" r="6"/><path d="M15.477 12.89L17.76 22l-5.736-4.322L6.24 22l2.283-9.11z"/></svg>
+                    <span>CFD學分: B</span>
+                </div>
+                <div class="course-detail">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-tag"><path d="M12.586 2.586A2 2 0 0 0 11.172 2H4a2 2 0 0 0-2 2v7.172a2 2 0 0 0 .586 1.414L15.293 21.293a2 2 0 0 0 2.828 0l7.172-7.172a2 2 0 0 0 0-2.828Z"/><path d="M7 7h.01"/></svg>
+                    <span>評鑑分類: 醫療品質</span>
+                </div>
+                <div class="course-detail">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-heart-handshake"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5 5 0 0 0 17.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5 5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/><path d="M12 5L9 2 6 5"/><path d="m18 13-2.5-2.5"/><path d="m15 10-1.5-1.5"/></svg>
+                    <span>全人照護: 生理心理</span>
+                </div>
+                 <div class="course-detail">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-user-check"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M16 11l2 2 4-4"/></svg>
+                    <span>引言人: 顏仲逸</span>
                 </div>
             </div>
 
-            <div id="course-list" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            </div>
-            
-            <div id="no-results" class="hidden text-center py-12">
-                <p class="text-xl text-gray-500">找不到符合條件的課程。</p>
+            <!-- Course Card 2 (常規業務報告 - No speaker/details) -->
+            <div class="course-card">
+                <div class="course-date">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-calendar-days"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/><path d="M8 14h.01"/><path d="M12 14h.01"/><path d="M16 14h.01"/><path d="M8 18h.01"/><path d="M12 18h.01"/><path d="M16 18h.01"/></svg>
+                    07/08
+                </div>
+                <h2 class="course-name">常規業務報告</h2>
+                <div class="course-detail">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-map-pin"><path d="M12 10.9c2.8 0 5 2.2 5 5s-2.2 5-5 5-5-2.2-5-5 2.2-5 5-5z"/><path d="M12 10.9L12 2"/></svg>
+                    <span>會議室: 553</span>
+                </div>
+                <div class="text-sm text-gray-500 mt-2">本週無主講人或特定學分資訊。</div>
             </div>
 
-        </main>
+            <!-- Course Card 3 -->
+            <div class="course-card">
+                <div class="course-date">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-calendar-days"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/><path d="M8 14h.01"/><path d="M12 14h.01"/><path d="M16 14h.01"/><path d="M8 18h.01"/><path d="M12 18h.01"/><path d="M16 18h.01"/></svg>
+                    07/15
+                </div>
+                <h2 class="course-name">師資培育-六大核心能力暨人文療癒教育課程 【時間的禮物-加齡者的自然療癒力】</h2>
+                <div class="course-detail">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-user"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                    <span>主講人: 陳安琪</span>
+                </div>
+                <div class="course-detail">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-map-pin"><path d="M12 10.9c2.8 0 5 2.2 5 5s-2.2 5-5 5-5-2.2-5-5 2.2-5 5-5z"/><path d="M12 10.9L12 2"/></svg>
+                    <span>會議室: 國際會議廳</span>
+                </div>
+                <div class="course-detail">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-award"><circle cx="12" cy="8" r="6"/><path d="M15.477 12.89L17.76 22l-5.736-4.322L6.24 22l2.283-9.11z"/></svg>
+                    <span>CFD學分: A(b)</span>
+                </div>
+                <div class="course-detail">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-tag"><path d="M12.586 2.586A2 2 0 0 0 11.172 2H4a2 2 0 0 0-2 2v7.172a2 2 0 0 0 .586 1.414L15.293 21.293a2 2 0 0 0 2.828 0l7.172-7.172a2 2 0 0 0 0-2.828Z"/><path d="M7 7h.01"/></svg>
+                    <span>評鑑分類: 醫學人文</span>
+                </div>
+                <div class="course-detail">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-heart-handshake"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5 5 0 0 0 17.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5 5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/><path d="M12 5L9 2 6 5"/><path d="m18 13-2.5-2.5"/><path d="m15 10-1.5-1.5"/></svg>
+                    <span>全人照護: 心理社會</span>
+                </div>
+                 <div class="course-detail">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-user-check"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M16 11l2 2 4-4"/></svg>
+                    <span>引言人: 林宛靜</span>
+                </div>
+            </div>
 
-        <footer class="mt-12 pt-6 border-t border-gray-300">
-            <h3 class="text-lg font-bold mb-3 text-gray-700">備註事項</h3>
-            <ul class="list-disc list-inside space-y-2 text-sm text-gray-600">
-                <li>所有課程皆須掃描QR code完成簽到、簽退及課程滿意度和測試。</li>
-                <li>Seminar同仁請於一週前繳交5題考題，自行上傳至Google雲端-與我共用-教學公共事務共用資料夾-部會/工作坊/特色課程。</li>
+            <!-- Course Card 4 -->
+            <div class="course-card">
+                <div class="course-date">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-calendar-days"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/><path d="M8 14h.01"/><path d="M12 14h.01"/><path d="M16 14h.01"/><path d="M8 18h.01"/><path d="M12 18h.01"/><path d="M16 18h.01"/></svg>
+                    07/22
+                </div>
+                <h2 class="course-name">師資培育-六大核心能力暨全人照護教育課程 【癢無止境-異位性皮膚炎】</h2>
+                <div class="course-detail">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-user"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                    <span>主講人: 施芳蘭</span>
+                </div>
+                <div class="course-detail">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-map-pin"><path d="M12 10.9c2.8 0 5 2.2 5 5s-2.2 5-5 5-5-2.2-5-5 2.2-5 5-5z"/><path d="M12 10.9L12 2"/></svg>
+                    <span>會議室: 561</span>
+                </div>
+                <div class="course-detail">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-award"><circle cx="12" cy="8" r="6"/><path d="M15.477 12.89L17.76 22l-5.736-4.322L6.24 22l2.283-9.11z"/></svg>
+                    <span>CFD學分: A(a)</span>
+                </div>
+                <div class="course-detail">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-tag"><path d="M12.586 2.586A2 2 0 0 0 11.172 2H4a2 2 0 0 0-2 2v7.172a2 2 0 0 0 .586 1.414L15.293 21.293a2 2 0 0 0 2.828 0l7.172-7.172a2 2 0 0 0 0-2.828Z"/><path d="M7 7h.01"/></svg>
+                    <span>評鑑分類: 醫療品質</span>
+                </div>
+                <div class="course-detail">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-heart-handshake"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5 5 0 0 0 17.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5 5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/><path d="M12 5L9 2 6 5"/><path d="m18 13-2.5-2.5"/><path d="m15 10-1.5-1.5"/></svg>
+                    <span>全人照護: 生理心理</span>
+                </div>
+                 <div class="course-detail">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-user-check"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M16 11l2 2 4-4"/></svg>
+                    <span>引言人: 蔡慧娟</span>
+                </div>
+            </div>
+
+            <!-- Course Card 5 -->
+            <div class="course-card">
+                <div class="course-date">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-calendar-days"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/><path d="M8 14h.01"/><path d="M12 14h.01"/><path d="M16 14h.01"/><path d="M8 18h.01"/><path d="M12 18h.01"/><path d="M16 18h.01"/></svg>
+                    07/29
+                </div>
+                <h2 class="course-name">師資培育-六大核心能力暨全人照護教育課程 【肌炎自體免疫標誌與臨床診斷應用】</h2>
+                <div class="course-detail">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-user"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                    <span>主講人: 蔡慧娟</span>
+                </div>
+                <div class="course-detail">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-map-pin"><path d="M12 10.9c2.8 0 5 2.2 5 5s-2.2 5-5 5-5-2.2-5-5 2.2-5 5-5z"/><path d="M12 10.9L12 2"/></svg>
+                    <span>會議室: 553</span>
+                </div>
+                <div class="course-detail">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-award"><circle cx="12" cy="8" r="6"/><path d="M15.477 12.89L17.76 22l-5.736-4.322L6.24 22l2.283-9.11z"/></svg>
+                    <span>CFD學分: A(a)</span>
+                </div>
+                <div class="course-detail">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-tag"><path d="M12.586 2.586A2 2 0 0 0 11.172 2H4a2 2 0 0 0-2 2v7.172a2 2 0 0 0 .586 1.414L15.293 21.293a2 2 0 0 0 2.828 0l7.172-7.172a2 2 0 0 0 0-2.828Z"/><path d="M7 7h.01"/></svg>
+                    <span>評鑑分類: 醫療品質</span>
+                </div>
+                <div class="course-detail">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-heart-handshake"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5 5 0 0 0 17.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5 5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/><path d="M12 5L9 2 6 5"/><path d="m18 13-2.5-2.5"/><path d="m15 10-1.5-1.5"/></svg>
+                    <span>全人照護: 生理心理</span>
+                </div>
+                 <div class="course-detail">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-user-check"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M16 11l2 2 4-4"/></svg>
+                    <span>引言人: 陳薔妃</span>
+                </div>
+            </div>
+
+            <!-- Course Card 6 -->
+            <div class="course-card">
+                <div class="course-date">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-calendar-days"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/><path d="M8 14h.01"/><path d="M12 14h.01"/><path d="M16 14h.01"/><path d="M8 18h.01"/><path d="M12 18h.01"/><path d="M16 18h.01"/></svg>
+                    08/05
+                </div>
+                <h2 class="course-name">師資培育-六大核心能力暨數位技能教育課程 【讓數據說話:從零開始打造 Power BI IGRA 檢驗分析儀表板】 【鏡檢組 GAS 機台-Chloride 能力試驗不合格報告】</h2>
+                <div class="course-detail">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-user"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                    <span>主講人: 陳薔妃 鏡檢組</span>
+                </div>
+                <div class="course-detail">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-map-pin"><path d="M12 10.9c2.8 0 5 2.2 5 5s-2.2 5-5 5-5-2.2-5-5 2.2-5 5-5z"/><path d="M12 10.9L12 2"/></svg>
+                    <span>會議室: 553</span>
+                </div>
+                <div class="course-detail">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-award"><circle cx="12" cy="8" r="6"/><path d="M15.477 12.89L17.76 22l-5.736-4.322L6.24 22l2.283-9.11z"/></svg>
+                    <span>CFD學分: C</span>
+                </div>
+                <div class="course-detail">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-tag"><path d="M12.586 2.586A2 2 0 0 0 11.172 2H4a2 2 0 0 0-2 2v7.172a2 2 0 0 0 .586 1.414L15.293 21.293a2 2 0 0 0 2.828 0l7.172-7.172a2 2 0 0 0 0-2.828Z"/><path d="M7 7h.01"/></svg>
+                    <span>評鑑分類: 數位技能</span>
+                </div>
+                <div class="course-detail">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-heart-handshake"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5 5 0 0 0 17.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5 5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/><path d="M12 5L9 2 6 5"/><path d="m18 13-2.5-2.5"/><path d="m15 10-1.5-1.5"/></svg>
+                    <span>全人照護: 生理心理</span>
+                </div>
+                 <div class="course-detail">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-user-check"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M16 11l2 2 4-4"/></svg>
+                    <span>引言人: 洪永東</span>
+                </div>
+            </div>
+
+            <!-- Course Card 7 (本週無部會) -->
+            <div class="course-card">
+                <div class="course-date">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-calendar-days"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/><path d="M8 14h.01"/><path d="M12 14h.01"/><path d="M16 14h.01"/><path d="M8 18h.01"/><path d="M12 18h.01"/><path d="M16 18h.01"/></svg>
+                    08/12
+                </div>
+                <h2 class="course-name">本週無部會</h2>
+                <div class="text-sm text-gray-500 mt-2">此日期無排定課程或業務報告。</div>
+            </div>
+
+            <!-- Course Card 8 -->
+            <div class="course-card">
+                <div class="course-date">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-calendar-days"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/><path d="M8 14h.01"/><path d="M12 14h.01"/><path d="M16 14h.01"/><path d="M8 18h.01"/><path d="M12 18h.01"/><path d="M16 18h.01"/></svg>
+                    08/19
+                </div>
+                <h2 class="course-name">師資培育-六大核心能力暨全人照護教育課程 【臨床分子診斷對於真菌感染之應用】</h2>
+                <div class="course-detail">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-user"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                    <span>主講人: 陳靜如</span>
+                </div>
+                <div class="course-detail">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-map-pin"><path d="M12 10.9c2.8 0 5 2.2 5 5s-2.2 5-5 5-5-2.2-5-5 2.2-5 5-5z"/><path d="M12 10.9L12 2"/></svg>
+                    <span>會議室: 國際會議廳</span>
+                </div>
+                <div class="course-detail">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-award"><circle cx="12" cy="8" r="6"/><path d="M15.477 12.89L17.76 22l-5.736-4.322L6.24 22l2.283-9.11z"/></svg>
+                    <span>CFD學分: B</span>
+                </div>
+                <div class="course-detail">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-tag"><path d="M12.586 2.586A2 2 0 0 0 11.172 2H4a2 2 0 0 0-2 2v7.172a2 2 0 0 0 .586 1.414L15.293 21.293a2 2 0 0 0 2.828 0l7.172-7.172a2 2 0 0 0 0-2.828Z"/><path d="M7 7h.01"/></svg>
+                    <span>評鑑分類: 醫療品質</span>
+                </div>
+                <div class="course-detail">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-heart-handshake"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5 5 0 0 0 17.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5 5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/><path d="M12 5L9 2 6 5"/><path d="m18 13-2.5-2.5"/><path d="m15 10-1.5-1.5"/></svg>
+                    <span>全人照護: 生理心理</span>
+                </div>
+                 <div class="course-detail">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-user-check"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M16 11l2 2 4-4"/></svg>
+                    <span>引言人: 杜建</span>
+                </div>
+            </div>
+
+            <!-- Course Card 9 -->
+            <div class="course-card">
+                <div class="course-date">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-calendar-days"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/><path d="M8 14h.01"/><path d="M12 14h.01"/><path d="M16 14h.01"/><path d="M8 18h.01"/><path d="M12 18h.01"/><path d="M16 18h.01"/></svg>
+                    08/26
+                </div>
+                <h2 class="course-name">師資培育-六大核心能力暨數位技能教育課程 【Power BI 基本介紹及應用】</h2>
+                <div class="course-detail">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-user"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                    <span>主講人: 黃靜妍</span>
+                </div>
+                <div class="course-detail">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-map-pin"><path d="M12 10.9c2.8 0 5 2.2 5 5s-2.2 5-5 5-5-2.2-5-5 2.2-5 5-5z"/><path d="M12 10.9L12 2"/></svg>
+                    <span>會議室: 561</span>
+                </div>
+                <div class="course-detail">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-award"><circle cx="12" cy="8" r="6"/><path d="M15.477 12.89L17.76 22l-5.736-4.322L6.24 22l2.283-9.11z"/></svg>
+                    <span>CFD學分: C</span>
+                </div>
+                <div class="course-detail">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-tag"><path d="M12.586 2.586A2 2 0 0 0 11.172 2H4a2 2 0 0 0-2 2v7.172a2 2 0 0 0 .586 1.414L15.293 21.293a2 2 0 0 0 2.828 0l7.172-7.172a2 2 0 0 0 0-2.828Z"/><path d="M7 7h.01"/></svg>
+                    <span>評鑑分類: 數位技能</span>
+                </div>
+                <div class="course-detail">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-heart-handshake"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5 5 0 0 0 17.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5 5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/><path d="M12 5L9 2 6 5"/><path d="m18 13-2.5-2.5"/><path d="m15 10-1.5-1.5"/></svg>
+                    <span>全人照護: 生理心理</span>
+                </div>
+                 <div class="course-detail">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-user-check"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M16 11l2 2 4-4"/></svg>
+                    <span>引言人: 王仁宏</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="note-section-cards">
+            <h3>備註:</h3>
+            <ul>
+                <li>上課時間: 13:00~14:00</li>
+                <li>所有課程皆須掃描QR code 完成簽到、簽退及課程滿意度和測試。</li>
+                <li>Seminar 同仁於一週前繳交5題考題,自行上傳至 Google 雲端-與我共用-教學公共事務共用資料夾-部會/工作坊/特色課程。</li>
                 <li>課程僅開放本院同仁參與。</li>
             </ul>
-            <p class="text-center text-xs text-gray-500 mt-8">臨床病理部品保教學 敬啟</p>
-        </footer>
-
+            <p class="department-signature">臨床病理部教學品保 敬啟</p>
+        </div>
     </div>
-
-    <script>
-        const courses = [
-            { date: '07/01', month: 7, location: '561', title: '師資培育-六大核心能力暨全人照護教育課程', topic: '【cobas 5800介紹】', speaker: '周月梅', cfd: 'B', category: '醫療品質', domain: '生理心理', video: 'P', moderator: '顏仲逸' },
-            { date: '07/08', month: 7, location: '553', title: '常規業務報告', topic: '', speaker: '各組組長', cfd: '', category: '', domain: '', video: '', moderator: '王傑田' },
-            { date: '07/15', month: 7, location: '國際會議廳', title: '師資培育-六大核心能力暨人文療癒教育課程', topic: '【時間的禮物-加齡者的自然療癒力】', speaker: '陳安琪', cfd: 'A(b)', category: '醫學人文', domain: '心理社會', video: 'P', moderator: '林宛靜' },
-            { date: '07/22', month: 7, location: '561', title: '師資培育-六大核心能力暨全人照護教育課程', topic: '【癢無止境-異位性皮膚炎】', speaker: '施芳蘭', cfd: 'A(a)', category: '醫療品質', domain: '生理心理', video: 'P', moderator: '蔡慧娟' },
-            { date: '07/29', month: 7, location: '553', title: '師資培育-六大核心能力暨全人照護教育課程', topic: '【肌炎自體免疫標誌與臨床診斷應用】', speaker: '蔡慧娟', cfd: 'A(a)', category: '醫療品質', domain: '生理心理', video: 'P', moderator: '陳薔妃' },
-            { date: '08/05', month: 8, location: '553', title: '師資培育-六大核心能力暨數位技能教育課程', topic: '【讓數據說話：從零開始打造Power BI IGRA檢驗分析儀表板】', '【鏡檢組GAS機台-Chloride能力試驗不合格報告】', speaker: '陳薔妃', '鏡檢組', cfd: 'C', category: '數位技能', domain: '生理心理', video: 'P', moderator: '洪永東' },
-            { date: '08/12', month: 8, location: '-', title: '本週無部會', topic: '', speaker: '', cfd: '', category: '', domain: '', video: '', moderator: '-' },
-            { date: '08/19', month: 8, location: '國際會議廳', title: '師資培育-六大核心能力暨全人照護教育課程', topic: '【臨床分子診斷對於真菌感染之應用】', speaker: '陳靜如', cfd: 'B', category: '醫療品質', domain: '生理心理', video: 'P', moderator: '杜建嶢' },
-            { date: '08/26', month: 8, location: '561', title: '師資培育-六大核心能力暨數位技能教育課程', topic: '【Power BI基本介紹及應用】', speaker: '黃靜妍', cfd: 'C', category: '數位技能', domain: '生理心理', video: 'P', moderator: '王仁宏' }
-        ];
-
-        const courseList = document.getElementById('course-list');
-        const noResults = document.getElementById('no-results');
-        const monthFilter = document.getElementById('month-filter');
-        const categoryFilter = document.getElementById('category-filter');
-        const locationFilter = document.getElementById('location-filter');
-        
-        let categoryChart;
-
-        function getCategoryTag(category) {
-            if (category === '醫療品質') return 'tag-quality';
-            if (category === '醫學人文') return 'tag-humanities';
-            if (category === '數位技能') return 'tag-digital';
-            return 'tag-default';
-        }
-
-        function renderCourses(filteredCourses) {
-            courseList.innerHTML = '';
-            if (filteredCourses.length === 0) {
-                noResults.classList.remove('hidden');
-                courseList.classList.add('hidden');
-                return;
-            }
-            noResults.classList.add('hidden');
-            courseList.classList.remove('hidden');
-
-            filteredCourses.forEach(course => {
-                const card = document.createElement('div');
-                card.className = 'course-card bg-white rounded-lg shadow-sm p-5 flex flex-col';
-                
-                let content = `
-                    <div class="flex-grow">
-                        <div class="flex justify-between items-start mb-2">
-                            <p class="text-xl font-bold text-blue-700">${course.date}</p>
-                            ${course.category ? `<span class="tag ${getCategoryTag(course.category)}">${course.category}</span>` : ''}
-                        </div>
-                        <h3 class="text-md font-semibold text-gray-800 mb-1">${course.title}</h3>
-                        ${course.topic ? `<p class="text-lg font-bold text-gray-900 mb-3">${course.topic}</p>` : '<div class="h-10"></div>'}
-                    </div>
-                    <div>
-                        ${course.speaker ? `<p class="text-sm text-gray-600 mt-2"><span class="font-semibold">主講人：</span>${course.speaker}</p>` : ''}
-                        <p class="text-sm text-gray-600"><span class="font-semibold">地點：</span>${course.location}</p>
-                        <p class="text-sm text-gray-600"><span class="font-semibold">引言人：</span>${course.moderator}</p>
-                    </div>
-                `;
-                
-                card.innerHTML = content;
-                courseList.appendChild(card);
-            });
-        }
-
-        function populateFilters() {
-            const categories = [...new Set(courses.map(c => c.category).filter(Boolean))];
-            categories.forEach(cat => {
-                const option = document.createElement('option');
-                option.value = cat;
-                option.textContent = cat;
-                categoryFilter.appendChild(option);
-            });
-
-            const locations = [...new Set(courses.map(c => c.location).filter(c => c && c !== '-'))];
-            locations.forEach(loc => {
-                const option = document.createElement('option');
-                option.value = loc;
-                option.textContent = loc;
-                locationFilter.appendChild(option);
-            });
-        }
-        
-        function updateChart(filteredCourses) {
-            const data = filteredCourses.reduce((acc, course) => {
-                if (course.category) {
-                    acc[course.category] = (acc[course.category] || 0) + 1;
-                }
-                return acc;
-            }, {});
-
-            const labels = Object.keys(data);
-            const values = Object.values(data);
-            
-            const backgroundColors = labels.map(label => {
-                if (label === '醫療品質') return '#BFDBFE';
-                if (label === '醫學人文') return '#A7F3D0';
-                if (label === '數位技能') return '#FDE68A';
-                return '#D1D5DB';
-            });
-
-            if (categoryChart) {
-                categoryChart.data.labels = labels;
-                categoryChart.data.datasets[0].data = values;
-                categoryChart.data.datasets[0].backgroundColor = backgroundColors;
-                categoryChart.update();
-            }
-        }
-
-        function filterAndRender() {
-            const selectedMonth = monthFilter.querySelector('.active').dataset.month;
-            const selectedCategory = categoryFilter.value;
-            const selectedLocation = locationFilter.value;
-
-            const filtered = courses.filter(course => {
-                const monthMatch = selectedMonth === 'all' || course.month == selectedMonth;
-                const categoryMatch = selectedCategory === 'all' || course.category === selectedCategory;
-                const locationMatch = selectedLocation === 'all' || course.location === selectedLocation;
-                return monthMatch && categoryMatch && locationMatch;
-            });
-            
-            renderCourses(filtered);
-            updateChart(filtered);
-        }
-        
-        function createChart() {
-            const ctx = document.getElementById('categoryChart').getContext('2d');
-            const data = courses.reduce((acc, course) => {
-                if (course.category) {
-                    acc[course.category] = (acc[course.category] || 0) + 1;
-                }
-                return acc;
-            }, {});
-            
-            const labels = Object.keys(data);
-            const values = Object.values(data);
-            
-            const backgroundColors = labels.map(label => {
-                if (label === '醫療品質') return '#BFDBFE';
-                if (label === '醫學人文') return '#A7F3D0';
-                if (label === '數位技能') return '#FDE68A';
-                return '#D1D5DB';
-            });
-            
-            categoryChart = new Chart(ctx, {
-                type: 'doughnut',
-                data: {
-                    labels: labels,
-                    datasets: [{
-                        label: '課程數量',
-                        data: values,
-                        backgroundColor: backgroundColors,
-                        borderColor: '#F8F7F4',
-                        borderWidth: 4
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: {
-                            position: 'bottom',
-                            labels: {
-                                padding: 15,
-                                boxWidth: 12,
-                                font: {
-                                    size: 12
-                                }
-                            }
-                        },
-                        tooltip: {
-                            callbacks: {
-                                label: function(context) {
-                                    let label = context.label || '';
-                                    if (label) {
-                                        label += ': ';
-                                    }
-                                    if (context.parsed !== null) {
-                                        label += context.parsed + ' 堂';
-                                    }
-                                    return label;
-                                }
-                            }
-                        }
-                    },
-                    cutout: '60%'
-                }
-            });
-        }
-
-        document.addEventListener('DOMContentLoaded', () => {
-            populateFilters();
-            renderCourses(courses);
-            createChart();
-
-            monthFilter.addEventListener('click', (e) => {
-                if(e.target.tagName === 'BUTTON') {
-                    monthFilter.querySelector('.active').classList.remove('active');
-                    e.target.classList.add('active');
-                    filterAndRender();
-                }
-            });
-            categoryFilter.addEventListener('change', filterAndRender);
-            locationFilter.addEventListener('change', filterAndRender);
-        });
-    </script>
 </body>
 </html>
